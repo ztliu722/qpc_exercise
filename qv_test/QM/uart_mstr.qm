@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model version="5.2.5" links="1">
+ <documentation>About this example:
+-------------------
+Simple &quot;Blinky&quot; console application for workstations (Windows, Linux, MacOS)
+(see &quot;QM Tutorial&quot; at: https://www.state-machine.com/qm/gs_tut.html)
+
+This example demonstrates:
+- Active object (Blinky) with state machine
+- Board Support Package abstraction for portability
+- BSP implementation for desktop OS (Windows, Linux, MacOS)
+- Platform-independent main() function
+- Makefile to build the generated code on desktop OS (Windows, Linux, MacOS)
+- Customized tools for building the generated code directly from QM
+
+Building the example:
+---------------------
+To build this example, you will need the QP/C framework installed on your computer and the GNU-GCC compiler. Both of them will be available if you install the QP-bundle from:
+
+https://www.state-machine.com/#Downloads
+
+Running the example:
+--------------------
+This example is a simple console application, which you can run from a terminal.
+
+For more QM examples for QP/C see:
+https://www.state-machine.com/qpc/exa.html</documentation>
+ <!--${qpc}-->
+ <framework name="qpc"/>
+ <!--${AOs}-->
+ <package name="AOs" stereotype="0x02">
+  <!--${AOs::UartMstr}-->
+  <class name="UartMstr" superclass="qpc::QActive">
+   <!--${AOs::UartMstr::te}-->
+   <attribute name="te" type="QTimeEvt" visibility="0x02" properties="0x00"/>
+   <!--${AOs::UartMstr::cmd}-->
+   <attribute name="cmd" type="uint8_t" visibility="0x02" properties="0x00"/>
+   <!--${AOs::UartMstr::retry}-->
+   <attribute name="retry" type="uint8_t" visibility="0x02" properties="0x00"/>
+   <!--${AOs::UartMstr::rsp}-->
+   <attribute name="rsp" type="uint8_t" visibility="0x02" properties="0x00"/>
+   <!--${AOs::UartMstr::SM}-->
+   <statechart properties="0x03">
+    <!--${AOs::UartMstr::SM::initial}-->
+    <initial target="../1/3">
+     <initial_glyph conn="4,8,4,3,10,4">
+      <action box="0,-2,6,2"/>
+     </initial_glyph>
+    </initial>
+    <!--${AOs::UartMstr::SM::Active}-->
+    <state name="Active">
+     <entry brief="uart_init">BSP_Uart_Init();</entry>
+     <!--${AOs::UartMstr::SM::Active::initial}-->
+     <initial target="../3">
+      <initial_glyph conn="24,14,5,1,4,4,-2">
+       <action box="0,-2,4,2"/>
+      </initial_glyph>
+     </initial>
+     <!--${AOs::UartMstr::SM::Active::DISABLE}-->
+     <tran trig="DISABLE" target="../../2">
+      <tran_glyph conn="54,16,1,3,10">
+       <action box="2,-2,8,2"/>
+      </tran_glyph>
+     </tran>
+     <!--${AOs::UartMstr::SM::Active::RX}-->
+     <state name="RX">
+      <entry brief="arm_te">QTimeEvt_armX(&amp;me-&gt;te, 3*BSP_TICKS_PER_SEC, 0U);</entry>
+      <exit brief="disarm_te">QTimeEvt_disarm(&amp;me-&gt;te);</exit>
+      <!--${AOs::UartMstr::SM::Active::RX::TIMEOUT}-->
+      <tran trig="TIMEOUT">
+       <action brief="--rety">--me-&gt;retry;</action>
+       <!--${AOs::UartMstr::SM::Active::RX::TIMEOUT::[retry>0]}-->
+       <choice target="../../../5">
+        <guard brief="retry &gt; 0">me-&gt;retry &gt; 0U</guard>
+        <choice_glyph conn="34,52,4,1,-18,-8">
+         <action box="-2,-20,7,2"/>
+        </choice_glyph>
+       </choice>
+       <!--${AOs::UartMstr::SM::Active::RX::TIMEOUT::[else]}-->
+       <choice target="../../../4">
+        <guard brief="else"/>
+        <choice_glyph conn="34,52,5,3,6">
+         <action box="1,0,6,2"/>
+        </choice_glyph>
+       </choice>
+       <tran_glyph conn="8,52,3,-1,26">
+        <action box="0,-2,15,2"/>
+       </tran_glyph>
+      </tran>
+      <!--${AOs::UartMstr::SM::Active::RX::RSP}-->
+      <tran trig="RSP" target="../../3">
+       <action brief="parse rsp">BSP_ParseRsp(Q_EVT_CAST(RspEvt)-&gt;rsp);
+/* send response to other active objects */</action>
+       <tran_glyph conn="8,50,3,1,22,-28,-4">
+        <action box="0,-2,13,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="8,42,18,12">
+       <entry box="1,2,10,2"/>
+       <exit box="1,4,11,2"/>
+      </state_glyph>
+     </state>
+     <!--${AOs::UartMstr::SM::Active::WAIT4CMD}-->
+     <state name="WAIT4CMD">
+      <entry brief="rst retry">me-&gt;retry = 3;</entry>
+      <!--${AOs::UartMstr::SM::Active::WAIT4CMD::CMD}-->
+      <tran trig="CMD" target="../../5">
+       <action>me-&gt;cmd = Q_EVT_CAST(CmdEvt)-&gt;cmd;</action>
+       <tran_glyph conn="8,24,3,1,20,6,-2">
+        <action box="0,-2,10,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="8,16,18,10">
+       <entry box="1,2,12,2"/>
+      </state_glyph>
+     </state>
+     <!--${AOs::UartMstr::SM::Active::ERR}-->
+     <state name="ERR">
+      <entry brief="err_handler, arm_te">/* uart error handler */
+QTimeEvt_armX(&amp;me-&gt;te, BSP_TICKS_PER_SEC/10, 0U);
+BSP_UART_Error_Handler();</entry>
+      <!--${AOs::UartMstr::SM::Active::ERR::TIMEOUT}-->
+      <tran trig="TIMEOUT" target="../../3">
+       <tran_glyph conn="48,42,0,1,-22,-22">
+        <action box="-11,-24,8,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="40,42,12,12">
+       <entry box="1,2,11,4"/>
+      </state_glyph>
+     </state>
+     <!--${AOs::UartMstr::SM::Active::TX}-->
+     <state name="TX">
+      <entry brief="send_cmd, arm_te">BSP_UART_Receive();
+BSP_UART_Send(me-&gt;cmd);
+QTimeEvt_armX(&amp;me-&gt;te, BSP_TICKS_PER_SEC/1, 0U);</entry>
+      <exit brief="disarm_te">QTimeEvt_disarm(&amp;me-&gt;te);
+</exit>
+      <!--${AOs::UartMstr::SM::Active::TX::TX_DONE}-->
+      <tran trig="TX_DONE" target="../../2">
+       <tran_glyph conn="8,38,3,1,20,10,-2">
+        <action box="0,-2,16,2"/>
+       </tran_glyph>
+      </tran>
+      <!--${AOs::UartMstr::SM::Active::TX::TIMEOUT}-->
+      <tran trig="TIMEOUT">
+       <action brief="--retry">--me-&gt;retry;</action>
+       <!--${AOs::UartMstr::SM::Active::TX::TIMEOUT::[else]}-->
+       <choice target="../../../4">
+        <guard brief="else"/>
+        <choice_glyph conn="40,36,5,0,4,6">
+         <action box="1,-2,4,2"/>
+        </choice_glyph>
+       </choice>
+       <!--${AOs::UartMstr::SM::Active::TX::TIMEOUT::[retry>0]}-->
+       <choice target="../..">
+        <guard brief="retry &gt; 0">me-&gt;retry &gt; 0U</guard>
+        <choice_glyph conn="40,36,4,1,-4,-14">
+         <action box="-8,-6,7,2"/>
+        </choice_glyph>
+       </choice>
+       <tran_glyph conn="8,36,3,-1,32">
+        <action box="0,-2,15,2"/>
+       </tran_glyph>
+      </tran>
+      <state_glyph node="8,28,18,12">
+       <entry box="1,2,16,2"/>
+       <exit box="1,4,11,2"/>
+      </state_glyph>
+     </state>
+     <state_glyph node="6,10,48,46">
+      <entry box="1,2,12,2"/>
+     </state_glyph>
+    </state>
+    <!--${AOs::UartMstr::SM::Idle}-->
+    <state name="Idle">
+     <entry>BSP_Uart_DeInit();</entry>
+     <!--${AOs::UartMstr::SM::Idle::ENABLE}-->
+     <tran trig="ENABLE" target="../../1">
+      <tran_glyph conn="64,20,3,1,-10">
+       <action box="-8,-2,8,2"/>
+      </tran_glyph>
+     </tran>
+     <state_glyph node="64,10,17,13">
+      <entry box="1,2,15,4"/>
+     </state_glyph>
+    </state>
+    <state_diagram size="92,81"/>
+   </statechart>
+  </class>
+  <!--${AOs::UartMstr_ctor}-->
+  <operation name="UartMstr_ctor" type="void" visibility="0x00" properties="0x00">
+   <code>UartMstr *me = (UartMstr *)AO_UartMstr;
+QActive_ctor(&amp;me-&gt;super, Q_STATE_CAST(&amp;UartMstr_initial));
+QTimeEvt_ctorX(&amp;me-&gt;te, &amp;me-&gt;super, TIMEOUT_SIG, 0U);
+QS_OBJ_DICTIONARY(&amp;me-&gt;te);</code>
+  </operation>
+ </package>
+ <!--${shared}-->
+ <package name="shared" stereotype="0x01">
+  <!--${shared::CmdEvt}-->
+  <class name="CmdEvt" superclass="qpc::QEvt">
+   <!--${shared::CmdEvt::cmd}-->
+   <attribute name="cmd" type="uint8_t" visibility="0x00" properties="0x00"/>
+  </class>
+  <!--${shared::RspEvt}-->
+  <class name="RspEvt" superclass="qpc::QEvt">
+   <!--${shared::RspEvt::rsp}-->
+   <attribute name="rsp" type="uint8_t" visibility="0x00" properties="0x00"/>
+  </class>
+ </package>
+ <!--${.}-->
+ <directory name=".">
+  <!--${.::UartMstr.h}-->
+  <file name="UartMstr.h">
+   <text>#ifndef UARTMSTR_H
+#define UARTMSTR_H
+
+enum UartMstrSignals{
+    DUMMY_SIG = Q_USER_SIG,
+    MAX_PUB_SIG,
+
+    TIMEOUT_SIG,
+    ENABLE_SIG,
+    DISABLE_SIG,
+    TX_DONE_SIG,
+    CMD_SIG,
+    RSP_SIG,
+    MAX_SIG
+};
+
+/* active object(s) used in this application -------------------------------*/
+extern QActive * const AO_UartMstr; /* opaque pointer */
+
+/* declare shared facilities */
+$declare${shared}
+
+/* declare ctor */
+$declare${AOs::UartMstr_ctor}
+
+#endif</text>
+  </file>
+  <!--${.::UartMstr.c}-->
+  <file name="UartMstr.c">
+   <text>#include &quot;qpc.h&quot;    /* QP/C framework API */
+#include &quot;bsp.h&quot;    /* Board Support Package interface */
+#include &quot;UartMstr.h&quot;
+
+/* ask QM to declare the UartMstr class ------------------------------------*/
+$declare${AOs::UartMstr}
+
+/* instantiate the Blinky active object ------------------------------------*/
+static UartMstr l_uartMstr;
+QActive * const AO_UartMstr = &amp;l_uartMstr.super;
+
+/* ask QM to define the Blinky class ---------------------------------------*/
+$define${AOs::UartMstr_ctor}
+$define${AOs::UartMstr}</text>
+  </file>
+ </directory>
+</model>

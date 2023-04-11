@@ -1,0 +1,6 @@
+--c99 -c --cpu Cortex-M0+ -D__MICROLIB -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32L0xx_HAL_Driver/Inc -I ../Drivers/STM32L0xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32L0xx/Include -I ../Drivers/CMSIS/Include
+-I.\RTE\_qv_test
+-IC:\Users\ZtLiu\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include
+-IC:\Users\ZtLiu\AppData\Local\Arm\Packs\Keil\STM32L0xx_DFP\2.0.1\Drivers\CMSIS\Device\ST\STM32L0xx\Include
+-D__UVISION_VERSION="529" -D_RTE_ -DSTM32L053xx -DUSE_HAL_DRIVER -DSTM32L053xx
+-o qv_test\stm32l0xx_hal_uart.o --omf_browse qv_test\stm32l0xx_hal_uart.crf --depend qv_test\stm32l0xx_hal_uart.d --feedback "qv_test\qv_test.fed" "../Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_uart.c"
