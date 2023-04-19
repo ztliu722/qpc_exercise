@@ -9,8 +9,9 @@
   <item name="backups">0</item>
  </group>
  <group name="windows">
-  <item id=".::UartMstr.h">-375,0,674,300</item>
-  <item id="AOs::UartMstr::SM">0,0,1131,703,*</item>
+  <item id=".::UartMstr.h">0,0,674,300</item>
+  <item id="AOs::UartMstr::SM">0,0,680,847,*</item>
+  <item id=".::UartMstr.c">0,300,674,300</item>
  </group>
  <group name="search">
   <item name="options">2032128</item>

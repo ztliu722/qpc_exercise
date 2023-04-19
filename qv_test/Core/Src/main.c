@@ -79,7 +79,6 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-	NVIC_DisableIRQ(SysTick_IRQn);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -89,8 +88,8 @@ int main(void)
 
     QF_init();    		/* initialize the framework and the underlying RT kernel */
     BSP_init();   		/* initialize the Board Support Package */
-	QS_OBJ_DICTIONARY(AO_UartMstr);
-	QS_SIG_DICTIONARY(TIMEOUT_SIG, (void *)0);
+		QS_OBJ_DICTIONARY(AO_UartMstr);
+		QS_SIG_DICTIONARY(TIMEOUT_SIG, (void *)0);
     QS_SIG_DICTIONARY(ENABLE_SIG, (void *)0);
     QS_SIG_DICTIONARY(DISABLE_SIG, (void *)0);
     QS_SIG_DICTIONARY(TX_DONE_SIG, (void *)0);

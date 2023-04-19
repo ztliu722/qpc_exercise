@@ -38,6 +38,7 @@
 #include "stm32l0xx_hal.h"
 #include "gpio.h"
 #include "usart.h"
+#include "string.h"
 
 #include "UartMstr.h"
 /* add other drivers if necessary... */
@@ -165,14 +166,14 @@ void BSP_init(void) {
 	MX_USART2_UART_Init();
 	
 	QS_INIT((void *)0); /* initialize the QS software tracing */
-//	QS_GLB_FILTER(QS_ALL_RECORDS); /* all QS records */
-//    QS_GLB_FILTER(-QS_QF_TICK); /* disable */ 
+	QS_GLB_FILTER(QS_ALL_RECORDS); /* all QS records */
+  QS_GLB_FILTER(-QS_QF_TICK); /* disable */ 
 //	QS_GLB_FILTER(-QS_QF_NEW);
 //	QS_GLB_FILTER(-QS_QF_GC);
 //	QS_GLB_FILTER(-QS_QF_MPOOL_GET);
 //	QS_GLB_FILTER(-QS_QF_MPOOL_PUT);
-	QS_GLB_FILTER(QS_SM_RECORDS);
-	QS_GLB_FILTER(QS_USER);
+//	QS_GLB_FILTER(QS_SM_RECORDS);
+//	QS_GLB_FILTER(QS_USER);
 	
 	
 	/* start uart rx 1byte cmd from spy terminal */
@@ -245,18 +246,18 @@ void BSP_UART_Receive(void)
 /*..........................................................................*/
 void BSP_ParseRsp(uint8_t rsp)
 {
+	QS_BEGIN_ID(QS_USER, 0)
+	QS_STR("Parse Rsp:");
 	if(rsp == 'a')
-	{
-		QS_BEGIN_ID(QS_USER, 0)
+	{	
 		QS_STR("Correct Rsp.");
-		QS_END();
 	}
 	else
-	{
-		QS_BEGIN_ID(QS_USER, 0)
+	{		
 		QS_STR("Incorrect Rsp.");
-		QS_END();
+		
 	}
+	QS_END();
 }
 /*..........................................................................*/
 void BSP_UART_Send(uint8_t cmd)
@@ -331,16 +332,33 @@ void QV_onIdle(void) {  /* called with interrupts disabled, see NOTE01 */
 	
 	if(huart2.gState == HAL_UART_STATE_READY)
 	{
-	    uint16_t block_size = 512;
+	    // uint16_t block_size = 512;
+		// uint8_t const *ptr;
+
+		// /** @todo this critical section does NOT protect the QS buffer, as the data is still in qs buffer after block pointer is got,
+		//  * interrupts may change the content of qs buffer while uart is transmitting data
+		//  */
+        // QF_INT_DISABLE();
+        // ptr = QS_getBlock(&block_size);
+        // QF_INT_ENABLE();
+		// if(block_size != 0)
+		// {
+		// 	HAL_UART_Transmit(&huart2, ptr, block_size, 100);
+		// }
+		uint16_t block_size = 512;
+		uint8_t uart_buf[512];
 		uint8_t const *ptr;
 
+		/* qs buffer is protected with critical section */
         QF_INT_DISABLE();
         ptr = QS_getBlock(&block_size);
+		memcpy(uart_buf, ptr, block_size);
         QF_INT_ENABLE();
 		if(block_size != 0)
 		{
 			HAL_UART_Transmit(&huart2, ptr, block_size, 100);
 		}
+
 	}
 	
 	
@@ -374,11 +392,11 @@ Q_NORETURN Q_onAssert(char const * const module, int_t const loc) {
     */
     (void)module;
     (void)loc;
-    QS_ASSERTION(module, loc, 10000U); /* report assertion to QS */
-	while(1)
-	{
-		;
-	}
+		QS_ASSERTION(module, loc, 10000U); /* report assertion to QS */
+		while(1)
+		{
+			__NOP();
+		}
 #ifndef NDEBUG
     //BSP_wait4SW1();
 #endif
